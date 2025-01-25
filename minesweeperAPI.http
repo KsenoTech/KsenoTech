@@ -1,0 +1,6 @@
+@minesweeperAPI_HostAddress = http://localhost:5189
+
+GET {{minesweeperAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
