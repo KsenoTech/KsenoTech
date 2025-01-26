@@ -1,17 +1,19 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Reflection.Emit;
-using System.Text.Json;
 
 namespace minesweeperAPI.ApplicationCore.DomModels
 {
     public class MinesweeperContext : DbContext
     {
+        protected readonly IConfiguration Configuration;
+        public MinesweeperContext(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
         public DbSet<Game> Games { get; set; }
 
-        public MinesweeperContext(DbContextOptions<MinesweeperContext> options) : base(options)
-        {
-        }
+        protected override void OnConfiguring(DbContextOptionsBuilder options)
+            => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -24,21 +26,17 @@ namespace minesweeperAPI.ApplicationCore.DomModels
                 entity.Property(e => e.MinesCount).IsRequired();
                 entity.Property(e => e.Completed).IsRequired();
 
-                // Сериализация Field в JSON
+                // Сохраняем Field и Mines как строки JSON
                 entity.Property(e => e.Field)
-                    .HasConversion(
-                        v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                        v => JsonSerializer.Deserialize<string[,]>(v, (JsonSerializerOptions)null));
+                    .HasColumnType("nvarchar(max)")
+                    .IsRequired();
 
-                // Сериализация Mines в JSON
                 entity.Property(e => e.Mines)
-                    .HasConversion(
-                        v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
-                        v => JsonSerializer.Deserialize<bool[,]>(v, (JsonSerializerOptions)null));
+                    .HasColumnType("nvarchar(max)")
+                    .IsRequired();
             });
 
             base.OnModelCreating(modelBuilder);
         }
-
     }
 }

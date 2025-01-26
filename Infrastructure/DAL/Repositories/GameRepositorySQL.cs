@@ -1,4 +1,5 @@
-﻿using minesweeperAPI.ApplicationCore.DomModels;
+﻿using Microsoft.EntityFrameworkCore;
+using minesweeperAPI.ApplicationCore.DomModels;
 using minesweeperAPI.ApplicationCore.Interfaces.Repositories;
 
 namespace minesweeperAPI.Infrastructure.DAL.Repositories
@@ -7,32 +8,35 @@ namespace minesweeperAPI.Infrastructure.DAL.Repositories
     {
         private MinesweeperContext _dbcontext;
 
-        private readonly Dictionary<Guid, Game> _games = new();
 
         public GameRepositorySQL(MinesweeperContext dbcontext)
         {
             _dbcontext = dbcontext;
         }
 
-        public Task<Game> CreateGameRepository(Game game)
-        {
-            _games[game.GameId] = game;
-            return Task.FromResult(game);
+        public async Task<Game> CreateGameRepository(Game game)
+        { 
+
+            await _dbcontext.Games.AddAsync(game);
+            await _dbcontext.SaveChangesAsync();
+            Console.WriteLine($"Game created and saved to DB: {game.GameId}");
+            return game;
         }
 
-        public Task<Game?> GetGameRepository(Guid gameId)
+        public async Task<Game?> GetGameRepository(Guid gameId)
         {
-            _games.TryGetValue(gameId, out var game);
-            return Task.FromResult(game);
+            var game = await _dbcontext.Games
+                .FirstOrDefaultAsync(g => g.GameId == gameId);
+
+            Console.WriteLine($"Game retrieved: {gameId} - {(game != null ? "Found" : "Not Found")}");
+            return game;
         }
 
-        public Task UpdateGameRepository(Game game)
+        public async Task UpdateGameRepository(Game game)
         {
-            if (_games.ContainsKey(game.GameId))
-            {
-                _games[game.GameId] = game;
-            }
-            return Task.CompletedTask;
+            _dbcontext.Games.Update(game);
+            await _dbcontext.SaveChangesAsync();
+            Console.WriteLine($"Game updated in DB: {game.GameId}");
         }
     }
 }

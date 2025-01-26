@@ -27,9 +27,9 @@ namespace minesweeperAPI.Infrastructure.DAL.Repositories
             }
         }
 
-        public int Save()
+        public async Task SaveChangesAsync()
         {
-            return _dbcontext.SaveChanges();
+            await _dbcontext.SaveChangesAsync();
         }
     }
 }
