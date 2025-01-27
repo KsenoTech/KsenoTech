@@ -19,7 +19,7 @@ namespace minesweeperAPI.Infrastructure.DAL.Repositories
 
             await _dbcontext.Games.AddAsync(game);
             await _dbcontext.SaveChangesAsync();
-            Console.WriteLine($"Game created and saved to DB: {game.GameId}");
+            //Console.WriteLine($"Game created and saved to DB: {game.GameId}");
             return game;
         }
 
@@ -28,7 +28,7 @@ namespace minesweeperAPI.Infrastructure.DAL.Repositories
             var game = await _dbcontext.Games
                 .FirstOrDefaultAsync(g => g.GameId == gameId);
 
-            Console.WriteLine($"Game retrieved: {gameId} - {(game != null ? "Found" : "Not Found")}");
+           // Console.WriteLine($"Game retrieved: {gameId} - {(game != null ? "Found" : "Not Found")}");
             return game;
         }
 
@@ -36,7 +36,7 @@ namespace minesweeperAPI.Infrastructure.DAL.Repositories
         {
             _dbcontext.Games.Update(game);
             await _dbcontext.SaveChangesAsync();
-            Console.WriteLine($"Game updated in DB: {game.GameId}");
+            //Console.WriteLine($"Game updated in DB: {game.GameId}");
         }
     }
 }

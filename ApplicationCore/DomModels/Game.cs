@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 
 namespace minesweeperAPI.ApplicationCore.DomModels
 {
     public class Game
     {
+        [Key]
         public Guid GameId { get; set; } = Guid.NewGuid();
         public int Width { get; set; }
         public int Height { get; set; }
@@ -21,7 +23,7 @@ namespace minesweeperAPI.ApplicationCore.DomModels
         [NotMapped]
         public List<List<string>> FieldList
         {
-            get => JsonSerializer.Deserialize<List<List<string>>>(Field);
+            get => string.IsNullOrEmpty(Field) ? new List<List<string>>() : JsonSerializer.Deserialize<List<List<string>>>(Field);
             set => Field = JsonSerializer.Serialize(value);
         }
 
@@ -29,7 +31,7 @@ namespace minesweeperAPI.ApplicationCore.DomModels
         [NotMapped]
         public List<List<bool>> MinesList
         {
-            get => JsonSerializer.Deserialize<List<List<bool>>>(Mines);
+            get => string.IsNullOrEmpty(Mines) ? new List<List<bool>>() : JsonSerializer.Deserialize<List<List<bool>>>(Mines);
             set => Mines = JsonSerializer.Serialize(value);
         }
 

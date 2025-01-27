@@ -43,7 +43,7 @@ namespace minesweeperAPI.Controllers
         {
             try
             {
-                var game = await _gameService.MakeTurnAsync(request.GameId, request.Row, request.Col);
+                var game = await _gameService.MakeTurnAsync(request.game_id, request.Row, request.Col);
 
                 // Преобразуем данные в нужный формат
                 var response = new
@@ -63,33 +63,6 @@ namespace minesweeperAPI.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-
-        //[HttpGet("{gameId}")]
-        //public async Task<IActionResult> GetGame(Guid gameId)
-        //{
-        //    try
-        //    {
-        //        var game = await _gameService.GetGameAsync(gameId);
-        //        if (game == null)
-        //        {
-        //            return NotFound(new { message = "Game not found" });
-        //        }
-
-        //        return Ok(new
-        //        {
-        //            game_id = game.GameId,
-        //            width = game.Width,
-        //            height = game.Height,
-        //            mines_count = game.MinesCount,
-        //            field = game.Field,
-        //            completed = game.Completed
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(new { error = ex.Message });
-        //    }
-        //}
 
 
 

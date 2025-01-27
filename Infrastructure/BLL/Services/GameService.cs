@@ -45,6 +45,7 @@ namespace minesweeperAPI.Infrastructure.BLL.Services
         public async Task<Game> MakeTurnAsync(Guid gameId, int row, int col)
         {
             var game = await _db.Games.GetGameRepository(gameId);
+            Console.WriteLine($"MakeTurnAsync {gameId}");
             if (game == null)
             {
                 throw new ArgumentException("Game not found.");
