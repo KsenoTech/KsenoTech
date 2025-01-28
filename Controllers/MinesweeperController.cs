@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using minesweeperAPI.ApplicationCore.DomModels;
 using minesweeperAPI.ApplicationCore.Interfaces.Services;
 using minesweeperAPI.ApplicationCore.Models;
 
@@ -19,7 +20,7 @@ namespace minesweeperAPI.Controllers
         [HttpPost("new")]
         public async Task<IActionResult> NewGame([FromBody] NewGameRequest request)
         {
-            var game = await _gameService.CreateGameAsync(request.Width, request.Height, request.MinesCount);
+            var game = await _gameService.CreateGameAsync(request.width, request.height, request.mines_count);
 
             // Преобразуем данные в нужный формат
             var response = new
@@ -32,38 +33,38 @@ namespace minesweeperAPI.Controllers
                 completed = game.Completed
             };
 
+
             return Ok(response);
         }
-
-
-
 
         [HttpPost("turn")]
         public async Task<IActionResult> MakeTurn([FromBody] TurnRequest request)
         {
             try
             {
-                var game = await _gameService.MakeTurnAsync(request.game_id, request.Row, request.Col);
+                // Выполняем ход
+                var updatedGame = await _gameService.MakeTurnAsync(request.game_id, request.Row, request.Col);
 
-                // Преобразуем данные в нужный формат
-                var response = new
+                // Возвращаем обновленное состояние игры
+                return Ok(new
                 {
-                    game_id = game.GameId,
-                    width = game.Width,
-                    height = game.Height,
-                    mines_count = game.MinesCount,
-                    field = game.FieldList, // Отправляем объект списка списков
-                    completed = game.Completed
-                };
-
-                return Ok(response);
+                    game_id = updatedGame.GameId,
+                    width = updatedGame.Width,
+                    height = updatedGame.Height,
+                    mines_count = updatedGame.MinesCount,
+                    field = updatedGame.FieldList, // Поле с обновленным состоянием
+                    completed = updatedGame.Completed
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return StatusCode(500, new { message = "An error occurred.", details = ex.Message });
             }
         }
-
 
 
     }

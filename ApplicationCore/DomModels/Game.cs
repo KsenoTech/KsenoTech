@@ -23,7 +23,7 @@ namespace minesweeperAPI.ApplicationCore.DomModels
         [NotMapped]
         public List<List<string>> FieldList
         {
-            get => string.IsNullOrEmpty(Field) ? new List<List<string>>() : JsonSerializer.Deserialize<List<List<string>>>(Field);
+            get => JsonSerializer.Deserialize<List<List<string>>>(Field);
             set => Field = JsonSerializer.Serialize(value);
         }
 
@@ -31,7 +31,7 @@ namespace minesweeperAPI.ApplicationCore.DomModels
         [NotMapped]
         public List<List<bool>> MinesList
         {
-            get => string.IsNullOrEmpty(Mines) ? new List<List<bool>>() : JsonSerializer.Deserialize<List<List<bool>>>(Mines);
+            get => JsonSerializer.Deserialize<List<List<bool>>>(Mines);
             set => Mines = JsonSerializer.Serialize(value);
         }
 

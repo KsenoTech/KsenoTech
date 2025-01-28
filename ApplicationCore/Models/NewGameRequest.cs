@@ -2,8 +2,8 @@
 {
     public class NewGameRequest
     {
-        public int Width { get; set; }
-        public int Height { get; set; }
-        public int MinesCount { get; set; }
+        public int width { get; set; }
+        public int height { get; set; }
+        public int mines_count { get; set; }
     }
 }
