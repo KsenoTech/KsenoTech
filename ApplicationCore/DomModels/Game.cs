@@ -18,6 +18,10 @@ namespace minesweeperAPI.ApplicationCore.DomModels
         // Поля для хранения JSON строк
         public string Field { get; set; } // Игровое поле в формате JSON
         public string Mines { get; set; } // Расположение мин в формате JSON
+        public string VisibleField { get; set; }
+
+
+
 
         // Сериализация Field в JSON для хранения в базе
         [NotMapped]
@@ -25,6 +29,13 @@ namespace minesweeperAPI.ApplicationCore.DomModels
         {
             get => JsonSerializer.Deserialize<List<List<string>>>(Field);
             set => Field = JsonSerializer.Serialize(value);
+        }
+
+        [NotMapped]
+        public List<List<string>> VisibleFieldList
+        {
+            get => JsonSerializer.Deserialize<List<List<string>>>(VisibleField);
+            set => VisibleField = JsonSerializer.Serialize(value);
         }
 
         // Сериализация Mines в JSON для хранения в базе

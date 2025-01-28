@@ -1,7 +1,7 @@
-﻿using System.Text;
-using minesweeperAPI.ApplicationCore.DomModels;
+﻿using minesweeperAPI.ApplicationCore.DomModels;
 using minesweeperAPI.ApplicationCore.Interfaces.Repositories;
 using minesweeperAPI.ApplicationCore.Interfaces.Services;
+using System.Text;
 
 namespace minesweeperAPI.Infrastructure.BLL.Services
 {
@@ -31,7 +31,8 @@ namespace minesweeperAPI.Infrastructure.BLL.Services
                 Height = height,
                 MinesCount = minesCount,
                 Completed = false,
-                FieldList = field,//GenerateHiddenField(width, height), // Initial field is hidden
+                FieldList = field,
+                VisibleFieldList = GenerateHiddenField(width, height),
                 MinesList = mines
             };
 
@@ -45,8 +46,15 @@ namespace minesweeperAPI.Infrastructure.BLL.Services
                 MinesCount = minesCount,
                 Completed = false,
                 FieldList = GenerateHiddenField(width, height), // Send hidden field to client initially
+                VisibleFieldList = GenerateHiddenField(width, height),
                 MinesList = mines
             };
+        }
+        private List<List<string>> GenerateHiddenField(int width, int height)
+        {
+            return Enumerable.Range(0, height)
+                .Select(_ => Enumerable.Repeat(" ", width).ToList())
+                .ToList();
         }
 
         public async Task<Game> MakeTurnAsync(Guid gameId, int row, int col)
@@ -67,27 +75,34 @@ namespace minesweeperAPI.Infrastructure.BLL.Services
                 throw new ArgumentException("Game is already completed.");
             }
 
-            // Если клетка содержит мину, завершаем игру
-            if (game.MinesList[row][col])
+            // Если пользователь нажал на мину
+            if (game.FieldList[row][col] == "X")
             {
                 game.Completed = true;
-                game.FieldList[row][col] = "X"; // Обозначаем мину
+                game.VisibleFieldList[row][col] = "X"; // Показываем мину
                 Console.WriteLine($"Mine hit at Row = {row}, Col = {col}. Game over.");
             }
             else
             {
-                // Открываем клетку и рекурсивно открываем соседние, если нужно
+                // Открываем выбранную ячейку и соседние (если пустые)
                 OpenCell(game, row, col);
+                // Лог текущего состояния видимого поля
+                Console.WriteLine($"Visible field after OpenCell:\n{FieldToString(game.VisibleFieldList)}");
             }
 
-            // Проверяем, завершена ли игра
+            // Проверяем завершение игры
             if (IsGameCompleted(game))
             {
                 game.Completed = true;
                 Console.WriteLine("Game completed successfully.");
             }
 
-            // Создаем объект для клиента, чтобы передать только открытые клетки и скрытые клетки как пробелы
+            // Обновляем игру в базе данных
+            await _db.Games.UpdateGameRepository(game);
+
+            Console.WriteLine($"Visible Field After Turn:\n{FieldToString(game.VisibleFieldList)}");
+
+            // Подготовка объекта для клиента
             var gameForClient = new Game
             {
                 GameId = game.GameId,
@@ -95,13 +110,14 @@ namespace minesweeperAPI.Infrastructure.BLL.Services
                 Height = game.Height,
                 MinesCount = game.MinesCount,
                 Completed = game.Completed,
-                FieldList = GetClientField(game) // Отправляем только обновленное поле
+                VisibleFieldList = game.VisibleFieldList
             };
 
-            Console.WriteLine($"Updated Field: \n{FieldToString(gameForClient.FieldList)}");
+            Console.WriteLine($"Updated Field: \n{FieldToString(gameForClient.VisibleFieldList)}");
 
             return gameForClient;
         }
+
         private List<List<string>> GetClientField(Game game)
         {
             var fieldForClient = new List<List<string>>();
@@ -111,8 +127,16 @@ namespace minesweeperAPI.Infrastructure.BLL.Services
                 var rowForClient = new List<string>();
                 for (int col = 0; col < game.Width; col++)
                 {
-                    // Show the value if the cell is opened, otherwise show a space
-                    rowForClient.Add(game.FieldList[row][col] != " " ? game.FieldList[row][col] : " ");
+                    // Если игра завершена и клетка содержит мину, показываем её
+                    if (game.Completed && game.MinesList[row][col])
+                    {
+                        rowForClient.Add("X");
+                    }
+                    else
+                    {
+                        // Иначе показываем только открытые клетки
+                        rowForClient.Add(game.VisibleFieldList[row][col] != " " ? game.VisibleFieldList[row][col] : " ");
+                    }
                 }
                 fieldForClient.Add(rowForClient);
             }
@@ -120,12 +144,13 @@ namespace minesweeperAPI.Infrastructure.BLL.Services
             return fieldForClient;
         }
 
+
+
         private void OpenCell(Game game, int row, int col)
         {
+            var visibleField = game.VisibleFieldList;
             var field = game.FieldList;
-            var mines = game.MinesList;
 
-            // Создаем очередь для клеток, которые нужно открыть
             var queue = new Queue<(int, int)>();
             queue.Enqueue((row, col));
 
@@ -133,38 +158,29 @@ namespace minesweeperAPI.Infrastructure.BLL.Services
             {
                 var (currentRow, currentCol) = queue.Dequeue();
 
-                // Если клетка уже открыта или это мина, пропускаем
-                if (field[currentRow][currentCol] != " " || mines[currentRow][currentCol])
+                if (visibleField[currentRow][currentCol] != " ") // Если клетка уже открыта, пропускаем
                     continue;
 
-                // Подсчитываем количество мин вокруг клетки
-                int minesAround = CountMinesAround(mines, currentRow, currentCol);
-                if (minesAround > 0)
+                visibleField[currentRow][currentCol] = field[currentRow][currentCol]; // Открываем клетку
+                Console.WriteLine($"Opened cell at ({currentRow}, {currentCol}): {field[currentRow][currentCol]}");
+
+                if (field[currentRow][currentCol] == "0") // Если клетка пустая, открываем соседей
                 {
-                    field[currentRow][currentCol] = minesAround.ToString(); // Записываем количество мин в клетку
-                }
-                else
-                {
-                    field[currentRow][currentCol] = "0"; // Обозначаем, что клетка открыта
-                                                         // Если клетка не имеет мин рядом, добавляем соседей в очередь
                     foreach (var (r, c) in GetNeighbors(game.Width, game.Height, currentRow, currentCol))
                     {
-                        queue.Enqueue((r, c));
+                        if (visibleField[r][c] == " ") // Добавляем только закрытые клетки
+                            queue.Enqueue((r, c));
                     }
                 }
-
-                // Логируем состояние поля
-                Console.WriteLine($"Current Field after opening cell [{currentRow}, {currentCol}]:");
-                Console.WriteLine(FieldToString(field));
             }
+
+            // Лог текущего состояния видимого поля
+            Console.WriteLine("Visible field after OpenCell:");
+            Console.WriteLine(FieldToString(visibleField));
         }
 
-        private List<List<string>> GenerateHiddenField(int width, int height)
-        {
-            return Enumerable.Range(0, height)
-                .Select(_ => Enumerable.Repeat(" ", width).ToList())
-                .ToList();
-        }
+
+
 
         private List<List<string>> GenerateFieldWithNumbers(int width, int height, List<List<bool>> mines)
         {
@@ -277,18 +293,18 @@ namespace minesweeperAPI.Infrastructure.BLL.Services
 
         private bool IsGameCompleted(Game game)
         {
-            // Проверяем, если все клетки открыты и нет мин
-            foreach (var row in game.FieldList)
+            for (int row = 0; row < game.Height; row++)
             {
-                foreach (var cell in row)
+                for (int col = 0; col < game.Width; col++)
                 {
-                    if (cell == " " || cell == "0") // Если клетка скрыта
+                    // Если клетка скрыта и это не мина, игра не завершена
+                    if (game.VisibleFieldList[row][col] == " " && game.FieldList[row][col] != "X")
                     {
-                        return false; // Игра не завершена
+                        return false;
                     }
                 }
             }
-            return true; // Все клетки открыты
+            return true; // Все клетки, кроме мин, открыты
         }
 
     }

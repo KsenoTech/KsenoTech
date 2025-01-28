@@ -17,8 +17,8 @@ namespace minesweeperAPI.Infrastructure.DAL.Repositories
         }
 
         public async Task<Game> CreateGameRepository(Game game)
-        { 
-
+        {
+            game.VisibleField = JsonSerializer.Serialize(game.VisibleFieldList);
             await _dbcontext.Games.AddAsync(game);
             await _dbcontext.SaveChangesAsync();
             Console.WriteLine($"Game created and saved to DB: {game.GameId}");
@@ -36,17 +36,21 @@ namespace minesweeperAPI.Infrastructure.DAL.Repositories
         {
             Console.WriteLine($"Updating game {game.GameId} with field:");
             Console.WriteLine(FieldToString(game.FieldList));
+            Console.WriteLine(FieldToString(game.VisibleFieldList));
 
             var existingGame = await _dbcontext.Games.FirstOrDefaultAsync(g => g.GameId == game.GameId);
 
             if (existingGame != null)
             {
                 existingGame.FieldList = game.FieldList;
+                existingGame.VisibleFieldList = game.VisibleFieldList;
                 existingGame.MinesList = game.MinesList;
                 existingGame.Completed = game.Completed;
 
                 existingGame.Field = JsonSerializer.Serialize(existingGame.FieldList);
                 existingGame.Mines = JsonSerializer.Serialize(existingGame.MinesList);
+                existingGame.VisibleField = JsonSerializer.Serialize(existingGame.VisibleFieldList);
+
 
                 // Сохраняем изменения
                 await _dbcontext.SaveChangesAsync();

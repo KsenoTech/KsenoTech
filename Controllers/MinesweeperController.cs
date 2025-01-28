@@ -29,10 +29,9 @@ namespace minesweeperAPI.Controllers
                 width = game.Width,
                 height = game.Height,
                 mines_count = game.MinesCount,
-                field = game.FieldList, // Отправляем объект списка списков
+                field = game.VisibleFieldList, // Возвращаем видимое поле
                 completed = game.Completed
             };
-
 
             return Ok(response);
         }
@@ -52,7 +51,7 @@ namespace minesweeperAPI.Controllers
                     width = updatedGame.Width,
                     height = updatedGame.Height,
                     mines_count = updatedGame.MinesCount,
-                    field = updatedGame.FieldList, // Поле с обновленным состоянием
+                    field = updatedGame.VisibleFieldList, // Возвращаем видимое поле
                     completed = updatedGame.Completed
                 });
             }
